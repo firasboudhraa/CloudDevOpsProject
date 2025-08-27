@@ -1,0 +1,22 @@
+# roles/trivy/tasks/main.yml
+- name: Install Trivy dependencies
+  apt:
+    name:
+      - wget
+      - apt-transport-https
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Add Trivy repo key
+  shell: wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+
+- name: Add Trivy repo
+  shell: echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -cs) main" > /etc/apt/sources.list.d/trivy.list
+
+- name: Install Trivy
+  apt:
+    name: trivy
+    state: present
+    update_cache: yes

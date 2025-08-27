@@ -1,0 +1,14 @@
+- name: Add ingress-nginx repo
+  shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+
+- name: Update Helm repos
+  shell: helm repo update
+
+
+- name: Create ingress-nginx namespace
+  shell: kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+
+
+- name: Install ingress-nginx
+  shell: helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx

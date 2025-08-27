@@ -1,0 +1,73 @@
+- name: Install SonarQube dependencies
+  apt:
+    name:
+      - openjdk-17-jdk
+      - unzip
+      - wget
+    update_cache: yes
+    state: present
+
+- name: Ensure sonarqube user exists
+  user:
+    name: sonarqube
+    system: yes
+    shell: /bin/bash
+    home: /opt/sonarqube
+    create_home: yes
+
+- name: Download SonarQube ZIP
+  get_url:
+    url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.4.1.88267.zip"
+    dest: "/tmp/sonarqube-10.4.1.88267.zip"
+    mode: '0644'
+
+- name: Remove previous installation directory
+  file:
+    path: /opt/sonarqube
+    state: absent
+
+- name: Unzip SonarQube to /opt
+  unarchive:
+    src: "/tmp/sonarqube-10.4.1.88267.zip"
+    dest: /opt
+    remote_src: yes
+
+- name: Move extracted SonarQube to final location
+  command: mv /opt/sonarqube-10.4.1.88267 /opt/sonarqube
+  args:
+    creates: /opt/sonarqube
+
+- name: Set permissions for SonarQube
+  file:
+    path: /opt/sonarqube
+    state: directory
+    recurse: yes
+    owner: sonarqube
+    group: sonarqube
+
+- name: Add SonarQube systemd service
+  copy:
+    dest: /etc/systemd/system/sonarqube.service
+    content: |
+      [Unit]
+      Description=SonarQube service
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=sonarqube
+      Group=sonarqube
+      ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh console
+      Restart=always
+      LimitNOFILE=65536
+      TimeoutSec=300
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+
+- name: Reload systemd and enable/start SonarQube
+  shell: |
+    systemctl daemon-reload
+    systemctl enable sonarqube
+    systemctl restart sonarqube

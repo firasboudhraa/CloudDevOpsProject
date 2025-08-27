@@ -1,0 +1,16 @@
+# roles/vault/tasks/main.yml
+- name: Add HashiCorp Helm repo
+  shell: helm repo add hashicorp https://helm.releases.hashicorp.com
+
+- name: Update Helm repos
+  shell: helm repo update
+
+- name: Create Vault namespace
+  shell: kubectl create namespace vault --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Install Vault via Helm
+  shell: helm upgrade --install vault hashicorp/vault --namespace vault --set "server.dev.enabled=true"
+
+- name: Patch Vault service to NodePort
+  shell: |
+    kubectl patch svc vault -n vault -p '{"spec": {"type": "NodePort", "ports": [{"port": 8200, "targetPort": 8200, "nodePort": 32100}]}}'

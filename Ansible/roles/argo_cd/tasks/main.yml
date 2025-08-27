@@ -1,0 +1,10 @@
+- name: Create namespace for ArgoCD
+  shell: kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Install ArgoCD
+  shell: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+- name: Patch ArgoCD service
+  shell: |
+    sleep 10
+    kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "targetPort": 8080, "nodePort": 32000}]}}'

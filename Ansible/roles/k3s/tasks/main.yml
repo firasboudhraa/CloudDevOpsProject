@@ -1,0 +1,15 @@
+- name: Install K3s
+  shell: curl -sfL https://get.k3s.io | sh -
+
+- name: Copy kubeconfig
+  shell: |
+    mkdir -p ~/.kube
+    cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+    chown $(id -u):$(id -g) ~/.kube/config
+
+- name: Wait for K3s
+  pause:
+    seconds: 15
+
+- name: Show nodes
+  command: kubectl get nodes
