@@ -50,3 +50,8 @@ resource "azurerm_network_security_group" "this" {
     Project = var.project_name
   }
 }
+
+resource "azurerm_subnet_network_security_group_association" "public" {
+  subnet_id                 = azurerm_subnet.public.id
+  network_security_group_id = azurerm_network_security_group.this.id
+}

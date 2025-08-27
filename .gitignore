@@ -1,1 +1,12 @@
+*.tfstate
+*.tfstate.backup
+*.terraform.lock.hcl
+.terraform.tfstate.*
+.terraform/
 Terraform/terraform.tfvars
+*.log
+*.pem
+*.key
+*.crt
+*.zip
+*.env

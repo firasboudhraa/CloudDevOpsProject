@@ -1,7 +1,7 @@
-//output "public_ip_address" {
-//  description = "Public IP of the Jenkins VM"
-//  value       = module.compute.public_ip_address
-//}
+output "public_ip_address" {
+  description = "Public IP of the Jenkins VM"
+  value       = module.compute.public_ip_address
+}
 
 output "private_ip_address" {
   description = "Private IP of the Jenkins VM"
