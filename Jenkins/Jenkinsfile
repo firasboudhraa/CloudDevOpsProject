@@ -19,7 +19,7 @@ pipeline {
     stages {
       stage('Checkout code') {
         steps {
-          git 'https://github.com/firasboudhraa/CloudDevOpsProject.git'
+          git branch: 'main', url: 'https://github.com/firasboudhraa/CloudDevOpsProject.git'
         }
       }
 
