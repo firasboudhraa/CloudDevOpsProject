@@ -4,6 +4,7 @@
 .terraform.tfstate.*
 .terraform/
 Terraform/terraform.tfvars
+App/node_modules/
 *.log
 *.pem
 *.key
