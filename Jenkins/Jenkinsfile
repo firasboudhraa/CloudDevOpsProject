@@ -1,9 +1,12 @@
-timestamps {
-  pipeline {
+pipeline {
     agent any
 
     tools {
       nodejs 'nodejs-22-16-0' // définie dans "Manage Jenkins > Global Tool Configuration"
+    }
+
+    options {
+      timestamps() // ✅ Correct ici
     }
 
     environment {
@@ -110,4 +113,3 @@ timestamps {
         }
     }
   }
-}
