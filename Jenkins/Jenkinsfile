@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USERNAME = 'firasboudhraa'
+        DOCKERHUB_REPO     = 'firas'
+        APP_DIR            = 'app'
+        IMAGE_NAME         = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest"
+    }
+
+    stages {
+        stage('Checkout code') {
+            steps {
+                git 'https://github.com/firasboudhraa/CloudDevOpsProject.git'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'jenkins-sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        echo "Running SonarQube scanner..."
+                        cd ${APP_DIR}
+                        npx sonar-scanner -X \
+                            -Dsonar.projectKey=express-app \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://localhost:9000 \
+                            -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME} ${APP_DIR}"
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                sh "mkdir -p trivy-reports"
+                sh """
+                    trivy image --severity HIGH,CRITICAL --no-progress \
+                        --format table \
+                        --output trivy-reports/express_app_report.txt \
+                        ${IMAGE_NAME}
+                """
+                sh "cat trivy-reports/express_app_report.txt"
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh """
+                        echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                        docker push ${IMAGE_NAME}
+                        docker logout
+                    """
+                }
+            }
+        }
+
+        stage('Update  ArgoCD Manifest') {
+            steps {
+                sh """
+                    git config user.email "jenkins"
+                    git config user.name "Jenkins"
+
+                    sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yaml
+
+                    git add ArgoCd/deployment.yaml
+                    git commit -m "Update image tag to ${IMAGE_NAME}"
+                    git push origin main
+                """
+    }
+}
+
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-reports/*.txt', fingerprint: true
+        }
+    }
+}
