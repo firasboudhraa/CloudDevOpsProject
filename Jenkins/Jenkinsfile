@@ -80,9 +80,9 @@ pipeline {
 
               git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/firasboudhraa/CloudDevOpsProject.git
 
-              sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yaml
+              sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yml
 
-              git add ArgoCd/deployment.yaml
+              git add ArgoCd/deployment.yml
               git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
               git push origin main
             '''
