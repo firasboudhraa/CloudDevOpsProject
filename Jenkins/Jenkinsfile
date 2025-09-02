@@ -90,6 +90,14 @@ pipeline {
         }
       }
 
+      stage('Apply ArgoCD Application') {
+        steps {
+          sh '''
+            echo "📦 Applying ArgoCD Application definition..."
+            kubectl apply -f ArgoCd/node-app-application.yml -n argocd || true
+          '''
+        }
+      }
 
       stage('Trigger ArgoCD Sync') {
         steps {
