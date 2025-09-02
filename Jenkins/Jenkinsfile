@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     tools {
-      nodejs 'nodejs-22-16-0' // définie dans "Manage Jenkins > Global Tool Configuration"
+      nodejs 'nodejs-22-16-0' 
     }
 
     options {
-      timestamps() // ✅ Correct ici
+      timestamps() 
     }
 
     environment {
@@ -73,16 +73,23 @@ pipeline {
 
       stage('Update ArgoCD Manifest') {
         steps {
-          sh '''
-            git config user.email "jenkins@example.com"
-            git config user.name "Jenkins"
-            sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yaml
-            git add ArgoCd/deployment.yaml
-            git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
-            git push origin main
-          '''
+          withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+            sh '''
+              git config user.email "jenkins@theteam.com.tn"
+              git config user.name "Jenkins"
+
+              git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/firasboudhraa/CloudDevOpsProject.git
+
+              sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yaml
+
+              git add ArgoCd/deployment.yaml
+              git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
+              git push origin main
+            '''
+          }
         }
       }
+
 
       stage('Trigger ArgoCD Sync') {
         steps {

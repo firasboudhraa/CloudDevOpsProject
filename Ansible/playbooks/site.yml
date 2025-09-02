@@ -3,11 +3,11 @@
   become: yes
   roles:
     - jenkins
+    - helm
+    - k3s
     - sonarqube
     - vault
     - trivy
     - argocd
-    - k3s
     - monitoring
-    - helm
     - ingress

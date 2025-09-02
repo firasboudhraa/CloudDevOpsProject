@@ -6,11 +6,13 @@
   loop:
     - openjdk-17-jdk
     - gnupg2
+    - curl
 
-- name: Add Jenkins GPG key
-  apt_key:
+- name: Download Jenkins GPG key
+  get_url:
     url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-    keyring: /usr/share/keyrings/jenkins-keyring.asc
+    dest: /usr/share/keyrings/jenkins-keyring.asc
+    mode: '0644'
 
 - name: Add Jenkins APT repository
   apt_repository:
