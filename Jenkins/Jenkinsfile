@@ -74,18 +74,18 @@ pipeline {
       stage('Update ArgoCD Manifest') {
         steps {
           withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
-            sh '''
+            sh """
               git config user.email "jenkins@theteam.com.tn"
               git config user.name "Jenkins"
-
+            
               git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/firasboudhraa/CloudDevOpsProject.git
-
+            
               sed -i 's|image: .*$|image: ${IMAGE_NAME}|' ArgoCd/deployment.yml
-
+            
               git add ArgoCd/deployment.yml
               git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
               git push origin main
-            '''
+            """
           }
         }
       }
