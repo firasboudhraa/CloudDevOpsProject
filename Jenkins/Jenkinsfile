@@ -12,7 +12,7 @@ pipeline {
     environment {
       DOCKERHUB_USERNAME = 'firasboudhraa'
       DOCKERHUB_REPO     = 'node-app'
-      APP_DIR            = 'app'
+      APP_DIR            = 'App'
       IMAGE_NAME         = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest"
     }
 
