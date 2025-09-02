@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: firasboudhraa/node-app:latest
+        image: ${IMAGE_NAME}
         resources:
           requests:
             memory: "128Mi"
