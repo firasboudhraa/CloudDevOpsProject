@@ -2,39 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Welcome to My App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚀 Node App - Firas Boudhraa</title>
   <style>
     body {
-      background-color: #f0f0f0;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #ece9e6, #ffffff);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
     }
-    .container {
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       text-align: center;
+      max-width: 400px;
+      width: 90%;
     }
+
     h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
       color: #333;
     }
-    a {
-      text-decoration: none;
-      color: #007bff;
+
+    p {
+      color: #555;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #helloResponse {
+      margin-top: 1rem;
+      color: #28a745;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="card">
     <h1>👋 Hello, Firas Boudhraa!</h1>
     <p>Welcome to your Node.js app</p>
-    <p>Visit <a href="/hello">/hello</a> to test your Express route</p>
+    <button onclick="callHello()">Try /hello endpoint</button>
+    <div id="helloResponse"></div>
   </div>
+
+  <script>
+    async function callHello() {
+      try {
+        const response = await fetch('/hello');
+        const data = await response.text();
+        document.getElementById('helloResponse').innerText = data;
+      } catch (error) {
+        document.getElementById('helloResponse').innerText = '❌ Error calling /hello';
+      }
+    }
+  </script>
 </body>
 </html>

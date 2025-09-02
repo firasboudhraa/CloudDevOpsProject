@@ -105,23 +105,25 @@ pipeline {
       }
     }
 
-    post {
-        always {
-            archiveArtifacts artifacts: 'trivy-reports/*.txt', fingerprint: true
-        }
-        success {
-            sh '''
-                curl -X POST -H 'Content-type: application/json' \
-                --data '{"text":"✅ Jenkins Pipeline Succeeded: *CloudDevOpsProject*"}' \
-                https://hooks.slack.com/services/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
-            '''
-        }
-        failure {
-            sh '''
-                curl -X POST -H 'Content-type: application/json' \
-                --data '{"text":"❌ Jenkins Pipeline *FAILED*: Please check the logs 📄"}' \
-                https://hooks.slack.com/services/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
-            '''
-        }
+  post {
+    success {
+      withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+        sh '''
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ Jenkins Pipeline Succeeded: *CloudDevOpsProject*"}' \
+          $SLACK_URL
+        '''
+      }
     }
+    failure {
+      withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+        sh '''
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"❌ Jenkins Pipeline *FAILED*: Please check the logs 📄"}' \
+          $SLACK_URL
+        '''
+      }
+    }
+  }
+
   }
