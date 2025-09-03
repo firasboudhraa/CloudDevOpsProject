@@ -23,29 +23,30 @@ pipeline {
         }
       }
 
-    stage('Load Vault Secrets') {
+   stage('Load Vault Secrets') {
       steps {
-          withVault([
-            credentialId: 'vault-jenkins-token'
-            vaultSecrets: [
-            [path: 'secret/ci/dockerhub', secretValues: [[envVar: 'DOCKER_PASSWORD', vaultKey: 'password']]],
-            [path: 'secret/ci/sonar', secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]],
-            [path: 'secret/ci/github', secretValues: [[envVar: 'GIT_USERNAME', vaultKey: 'username'], [envVar: 'GIT_TOKEN', vaultKey: 'token']]],
-            [path: 'secret/ci/slack', secretValues: [[envVar: 'SLACK_URL', vaultKey: 'webhook']]],
-            [path: 'secret/ci/argocd', secretValues: [[envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password']]]
-            ],
-            ]) {
-            sh '''
+        withVault([
+          credentialsId: 'vault-jenkins-token',
+          vaultSecrets: [
+            [path: 'secret/ci/dockerhub', secretValues: [[envVar: 'DOCKER_PASSWORD', vaultKey: 'password']]], 
+            [path: 'secret/ci/sonar',     secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]], 
+            [path: 'secret/ci/github',    secretValues: [[envVar: 'GIT_USERNAME', vaultKey: 'username'], [envVar: 'GIT_TOKEN', vaultKey: 'token']]], 
+            [path: 'secret/ci/slack',     secretValues: [[envVar: 'SLACK_URL', vaultKey: 'webhook']]], 
+            [path: 'secret/ci/argocd',    secretValues: [[envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password']]]
+          ]
+        ]) {
+          sh '''
             echo "🔐 Vault secrets loaded"
-            echo "DOCKER_PASSWORD = ${DOCKER_PASSWORD.take(5)}*****"
-            echo "SONAR_TOKEN = ${SONAR_TOKEN.take(5)}*****"
+            echo "DOCKER_PASSWORD = ${DOCKER_PASSWORD:0:5}*****"
+            echo "SONAR_TOKEN = ${SONAR_TOKEN:0:5}*****"
             echo "GIT_USERNAME = ${GIT_USERNAME}"
-            echo "GIT_TOKEN = ${GIT_TOKEN.take(5)}*****"
-            echo "SLACK_URL = ${SLACK_URL.take(30)}..."
+            echo "GIT_TOKEN = ${GIT_TOKEN:0:5}*****"
+            echo "SLACK_URL = ${SLACK_URL:0:30}..."
           '''
-          }
+        }
       }
     }
+
 
       stage('SonarQube Analysis') {
         steps {
