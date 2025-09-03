@@ -14,7 +14,7 @@ pipeline {
       DOCKERHUB_REPO     = 'node-app'
       APP_DIR            = 'App'
       IMAGE_NAME         = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest"
-      VAULT_ADDR         = 'http://localhost:32100'  // or http://127.0.0.1:8200 if running locally
+      VAULT_ADDR         = 'http://localhost:32100'  
 
     }
 
@@ -128,30 +128,40 @@ pipeline {
         }
       }
 
-      stage('Login to ArgoCD') {
+      stage('Login & Sync ArgoCD') {
         steps {
-          sh '''
-            echo "🔐 Logging into ArgoCD..."
-            ARGOCD_SERVER=localhost:32000
-            ARGOCD_USERNAME=admin
+          script {
+            def config = [
+              vaultCredentialId: 'vault-jenkins-token',
+              vaultUrl: "${VAULT_ADDR}",
+              engineVersion: 2
+            ]
+            def argocdSecret = [
+              [path: 'secret/ci/argocd', secretValues: [
+                [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password']
+              ]]
+            ]
 
-            argocd login $ARGOCD_SERVER \
-              --username $ARGOCD_USERNAME \
-              --password $ARGOCD_PASSWORD \
-              --insecure --grpc-web
-          '''
-        }
-      }
+            withVault([vaultSecrets: argocdSecret, configuration: config]) {
+              sh '''
+                echo "🔐 Logging into ArgoCD..."
+                ARGOCD_SERVER=localhost:30915
+                ARGOCD_USERNAME=admin
 
-      stage('Trigger ArgoCD Sync') {
-        steps {
-          sh '''
-            argocd app sync  node-app --insecure --grpc-web || echo "ArgoCD sync failed"
-          '''
+                argocd login $ARGOCD_SERVER \
+                  --username $ARGOCD_USERNAME \
+                  --password $ARGOCD_PASSWORD \
+                  --insecure --grpc-web
+
+                echo "🚀 Triggering ArgoCD sync..."
+                argocd app sync node-app --insecure --grpc-web || echo "ArgoCD sync failed"
+              '''
+            }
+          }
         }
       }
     }
-
+    
   post {
     success {
       withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
@@ -173,4 +183,4 @@ pipeline {
     }
   }
 
-  }
+}
