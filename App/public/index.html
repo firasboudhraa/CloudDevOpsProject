@@ -3,65 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚀 Node App - Firas Boudhraa</title>
-  <style>
-    body {
-      background: linear-gradient(to right, #ece9e6, #ffffff);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-    }
-
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-      color: #333;
-    }
-
-    p {
-      color: #555;
-    }
-
-    button {
-      margin-top: 1rem;
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    #helloResponse {
-      margin-top: 1rem;
-      color: #28a745;
-      font-weight: bold;
-    }
-  </style>
+  <title>Firas Boudhraa</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <div class="card">
     <h1>👋 Hello, Firas Boudhraa!</h1>
-    <p>Welcome to your Node.js app</p>
+    <p>Welcome to your awesome Node.js App</p>
     <button onclick="callHello()">Try /hello endpoint</button>
     <div id="helloResponse"></div>
   </div>
@@ -69,11 +18,11 @@
   <script>
     async function callHello() {
       try {
-        const response = await fetch('/hello');
-        const data = await response.text();
-        document.getElementById('helloResponse').innerText = data;
-      } catch (error) {
-        document.getElementById('helloResponse').innerText = '❌ Error calling /hello';
+        const res = await fetch('/hello');
+        const text = await res.text();
+        document.getElementById('helloResponse').innerText = text;
+      } catch (e) {
+        document.getElementById('helloResponse').innerText = '❌ Failed to reach /hello';
       }
     }
   </script>

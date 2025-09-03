@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 0"
   },
   "dependencies": {
+    "dotenv": "^17.2.2",
     "express": "^4.17.1"
   }
 }
