@@ -43,7 +43,10 @@ pipeline {
               [envVar: 'GIT_TOKEN', vaultKey: 'token']
             ]],
             [path: 'secret/ci/slack', secretValues: [[envVar: 'SLACK_URL', vaultKey: 'webhook']]],
-            [path: 'secret/ci/argocd', secretValues: [[envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password']]]
+            [path: 'secret/ci/argocd', secretValues: [
+              [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password'],
+              [envVar: 'ARGOCD_USERNAME', vaultKey: 'admin_username']
+            ]]
           ]
 
           def configuration = [
@@ -145,7 +148,8 @@ pipeline {
             ]
             def argocdSecret = [
               [path: 'secret/ci/argocd', secretValues: [
-                [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password']
+                [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password'],
+                [envVar: 'ARGOCD_USERNAME', vaultKey: 'admin_username']
               ]]
             ]
 
@@ -153,7 +157,6 @@ pipeline {
               sh '''
                 echo "🔐 Logging into ArgoCD..."
                 ARGOCD_SERVER=localhost:30915
-                ARGOCD_USERNAME=admin
 
                 argocd login $ARGOCD_SERVER \
                   --username $ARGOCD_USERNAME \
