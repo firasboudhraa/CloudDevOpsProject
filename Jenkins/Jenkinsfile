@@ -23,6 +23,32 @@ pipeline {
         }
       }
 
+      stage('Load Secrets from Vault') {
+        steps {
+          script {
+            withVault([
+              vaultSecrets: [
+                [path: 'secret/ci/dockerhub', secretValues: [
+                  [envVar: 'DOCKER_PASSWORD', vaultKey: 'password']
+                ]],
+                [path: 'secret/ci/sonar', secretValues: [
+                  [envVar: 'SONAR_TOKEN', vaultKey: 'token']
+                ]],
+                [path: 'secret/ci/github', secretValues: [
+                  [envVar: 'GIT_USERNAME', vaultKey: 'username'],
+                  [envVar: 'GIT_TOKEN', vaultKey: 'token']
+                ]],
+                [path: 'secret/ci/slack', secretValues: [
+                  [envVar: 'SLACK_URL', vaultKey: 'webhook']
+                ]]
+              ]
+            ]) {
+              echo '🔐 Vault secrets loaded successfully'
+            }
+          }
+        }
+    }
+
       stage('SonarQube Analysis') {
         steps {
           withCredentials([string(credentialsId: 'jenkins-sonarqube-token', variable: 'SONAR_TOKEN')]) {
