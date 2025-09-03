@@ -10,12 +10,12 @@ pipeline {
     }
 
     environment {
-      DOCKER_PASSWORD = vault path: 'secret/data/ci/dockerhub', key: 'password', credentialsId: 'vault-jenkins-token'
-      SONAR_TOKEN     = vault path: 'secret/data/ci/sonar',     key: 'token',    credentialsId: 'vault-jenkins-token'
-      GIT_USERNAME    = vault path: 'secret/data/ci/github',    key: 'username', credentialsId: 'vault-jenkins-token'
-      GIT_TOKEN       = vault path: 'secret/data/ci/github',    key: 'token',    credentialsId: 'vault-jenkins-token'
-      SLACK_URL       = vault path: 'secret/data/ci/slack',     key: 'webhook',  credentialsId: 'vault-jenkins-token'
-      ARGOCD_PASSWORD = vault path: 'secret/data/ci/argocd', key: 'admin_password', credentialsId: 'vault-jenkins-token'
+      DOCKER_PASSWORD = vault path: 'secret/ci/dockerhub', key: 'password', credentialsId: 'vault-jenkins-token'
+      SONAR_TOKEN     = vault path: 'secret/ci/sonar',     key: 'token',    credentialsId: 'vault-jenkins-token'
+      GIT_USERNAME    = vault path: 'secret/ci/github',    key: 'username', credentialsId: 'vault-jenkins-token'
+      GIT_TOKEN       = vault path: 'secret/ci/github',    key: 'token',    credentialsId: 'vault-jenkins-token'
+      SLACK_URL       = vault path: 'secret/ci/slack',     key: 'webhook',  credentialsId: 'vault-jenkins-token'
+      ARGOCD_PASSWORD = vault path: 'secret/ci/argocd', key: 'admin_password', credentialsId: 'vault-jenkins-token'
 
       DOCKERHUB_USERNAME = 'firasboudhraa'
       DOCKERHUB_REPO     = 'node-app'
