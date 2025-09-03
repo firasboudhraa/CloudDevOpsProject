@@ -115,7 +115,7 @@ pipeline {
       stage('Trigger ArgoCD Sync') {
         steps {
           sh '''
-            argocd app sync cloud-devops-app --insecure --grpc-web || echo "ArgoCD sync failed"
+            argocd app sync  node-app --insecure --grpc-web || echo "ArgoCD sync failed"
           '''
         }
       }
