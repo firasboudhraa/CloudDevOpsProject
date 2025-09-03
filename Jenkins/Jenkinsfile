@@ -15,7 +15,8 @@ pipeline {
       GIT_USERNAME    = vault path: 'secret/data/ci/github',    key: 'username', credentialsId: 'vault-jenkins-token'
       GIT_TOKEN       = vault path: 'secret/data/ci/github',    key: 'token',    credentialsId: 'vault-jenkins-token'
       SLACK_URL       = vault path: 'secret/data/ci/slack',     key: 'webhook',  credentialsId: 'vault-jenkins-token'
-      
+      ARGOCD_PASSWORD = vault path: 'secret/data/ci/argocd', key: 'admin_password', credentialsId: 'vault-jenkins-token'
+
       DOCKERHUB_USERNAME = 'firasboudhraa'
       DOCKERHUB_REPO     = 'node-app'
       APP_DIR            = 'App'
@@ -118,8 +119,6 @@ pipeline {
             echo "🔐 Logging into ArgoCD..."
             ARGOCD_SERVER=localhost:32000
             ARGOCD_USERNAME=admin
-            ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret \
-              -o jsonpath="{.data.password}" | base64 -d)
 
             argocd login $ARGOCD_SERVER \
               --username $ARGOCD_USERNAME \
