@@ -23,7 +23,7 @@ pipeline {
         }
       }
 
-      stage('Load Vault Secrets') {
+      stage('Test Vault Secrets') {
         steps {
           script {
             def secrets = [
