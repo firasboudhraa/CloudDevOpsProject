@@ -5,10 +5,27 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
+        "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:cov": "cross-env NODE_ENV=test jest --coverage --runInBand"
   },
   "dependencies": {
     "dotenv": "^17.2.2",
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "jest": "^30.1.3",
+    "supertest": "^7.1.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "routes/**/*.js",
+      "app.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "cobertura"]
   }
 }

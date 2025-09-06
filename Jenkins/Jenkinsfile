@@ -63,7 +63,14 @@ pipeline {
       }
     }
   
-
+      stage('Test & Coverage') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'npm ci'
+          sh 'npm run test:cov'
+          }
+        }
+      }
 
       stage('SonarQube Analysis') {
         steps {
