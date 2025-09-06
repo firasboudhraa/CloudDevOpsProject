@@ -1,55 +1,48 @@
 pipeline {
-  agent any
+    agent any
 
-  tools { 
-    nodejs 'nodejs-22-16-0' 
-  }
+    tools {
+      nodejs 'nodejs-22-16-0' 
+    }
 
-  options { 
-    timestamps() 
-  }
+    options {
+      timestamps() 
+    }
 
-  environment {
-    DOCKERHUB_USERNAME = 'firasboudhraa'
-    DOCKERHUB_REPO     = 'node-app'
-    APP_DIR            = 'App'
-    IMAGE_NAME         = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest"
-    VAULT_ADDR         = 'http://localhost:32100'
-  }
+    environment {
+      DOCKERHUB_USERNAME = 'firasboudhraa'
+      DOCKERHUB_REPO     = 'node-app'
+      APP_DIR            = 'App'
+      IMAGE_NAME         = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest"
+      VAULT_ADDR         = 'http://localhost:32100'  
 
-  stages {
+    }
 
-    stage('Checkout code') {
-      steps {
-        git branch: 'main', url: 'https://github.com/firasboudhraa/CloudDevOpsProject.git'
-        script {
-          env.GIT_COMMIT_HASH = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-          env.IMAGE_TAG = env.GIT_COMMIT_HASH
-          env.IMAGE_NAME = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${IMAGE_TAG}"
-          echo "Commit hash: ${env.IMAGE_TAG}"
-          echo "Image name: ${env.IMAGE_NAME}"
+    stages {
+      stage('Checkout code') {
+        steps {
+          git branch: 'main', url: 'https://github.com/firasboudhraa/CloudDevOpsProject.git'
+          script {
+            env.GIT_COMMIT_HASH = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+            env.IMAGE_TAG = env.GIT_COMMIT_HASH
+            env.IMAGE_NAME = "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${IMAGE_TAG}"
+            echo "📝 Commit hash: ${env.IMAGE_TAG}"
+            echo "📦 Image name: ${env.IMAGE_NAME}"
+          }
         }
       }
-    }
 
     stage('Load Vault Secrets') {
       steps {
         script {
           def secrets = [
-            // docker: on prend seulement le mot de passe, le username vient de environment
-            [path: 'secret/ci/dockerhub', secretValues: [
-              [envVar: 'DOCKER_PASSWORD', vaultKey: 'password']
-            ]],
-            [path: 'secret/ci/sonar', secretValues: [
-              [envVar: 'SONAR_TOKEN', vaultKey: 'token']
-            ]],
+            [path: 'secret/ci/dockerhub', secretValues: [[envVar: 'DOCKER_PASSWORD', vaultKey: 'password']]],
+            [path: 'secret/ci/sonar', secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]],
             [path: 'secret/ci/github', secretValues: [
               [envVar: 'GIT_USERNAME', vaultKey: 'username'],
-              [envVar: 'GIT_TOKEN',    vaultKey: 'token']
+              [envVar: 'GIT_TOKEN', vaultKey: 'token']
             ]],
-            [path: 'secret/ci/slack', secretValues: [
-              [envVar: 'SLACK_URL', vaultKey: 'webhook'] // <-- clé cohérente
-            ]],
+            [path: 'secret/ci/slack', secretValues: [[envVar: 'SLACK_URL', vaultKey: 'webhook']]],
             [path: 'secret/ci/argocd', secretValues: [
               [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password'],
               [envVar: 'ARGOCD_USERNAME', vaultKey: 'admin_username']
@@ -63,120 +56,213 @@ pipeline {
           ]
 
           withVault([vaultSecrets: secrets, configuration: configuration]) {
-            echo "Secrets loaded from Vault."
+            echo "✅ Vault secrets loaded successfully"
           }
         }
       }
     }
-
-    stage('Test & Coverage') {
+  
+      stage('Test & Coverage') {
       steps {
         dir("${APP_DIR}") {
           sh 'npm ci'
           sh 'npm run test:cov'
+          }
+        }
+      }
+
+      stage('SonarQube Analysis') {
+        steps {
+          script {
+            def config = [
+              vaultCredentialId: 'vault-jenkins-token',
+              vaultUrl: "${VAULT_ADDR}",
+              engineVersion: 2
+            ]
+            def sonarSecret = [
+              [path: 'secret/ci/sonar', secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]]
+            ]
+
+            withVault([vaultSecrets: sonarSecret, configuration: config]) {
+              echo "✅ SonarQube secrets loaded successfully"
+              sh 'echo 🔐 $SONAR_TOKEN'
+            }
+            dir("${APP_DIR}") {
+              sh '''
+                echo "Running SonarQube scanner..."
+                npx sonar-scanner -X \
+                  -Dsonar.projectKey=express-app \
+                  -Dsonar.sources=. \
+                  -Dsonar.host.url=http://localhost:9000 \
+                  -Dsonar.login=${SONAR_TOKEN}
+              '''
+            }
+          }
+        }
+      }
+
+      stage('Build Docker Image') {
+        steps {
+          sh "docker build -t ${IMAGE_NAME} ${APP_DIR}"
+        }
+      }
+
+      stage('Trivy Scan') {
+        steps {
+          sh '''
+            mkdir -p trivy-reports
+            trivy image --severity HIGH,CRITICAL --no-progress \
+              --format table \
+              --output trivy-reports/express_app_report.txt \
+              ${IMAGE_NAME}
+            cat trivy-reports/express_app_report.txt
+          '''
+        }
+      }
+
+      stage('Push to DockerHub') {
+        steps {
+          script {
+              def config = [
+                vaultCredentialId: 'vault-jenkins-token',
+                vaultUrl: "${VAULT_ADDR}",
+                engineVersion: 2
+              ]
+              def dockerSecret = [
+                [path: 'secret/ci/dockerhub', secretValues: [
+                  [envVar: 'DOCKER_PASSWORD', vaultKey: 'password']
+                ]]
+              ]
+
+            withVault([vaultSecrets: dockerSecret, configuration: config]) {
+            sh '''
+              echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+              docker push ${IMAGE_NAME}
+              docker logout
+            '''
+           }
+          }
+        }
+      } 
+
+        stage('Update ArgoCD Manifest') {
+          steps {
+            script {
+              def config = [
+                vaultCredentialId: 'vault-jenkins-token',
+                vaultUrl: "${VAULT_ADDR}",
+                engineVersion: 2
+              ]
+              def githubSecret = [
+                [path: 'secret/ci/github', secretValues: [
+                  [envVar: 'GIT_USERNAME', vaultKey: 'username'],
+                  [envVar: 'GIT_TOKEN', vaultKey: 'token']
+                ]]
+              ]
+
+            withVault([vaultSecrets: githubSecret, configuration: config]) {
+              sh """
+                git config user.email "jenkins@theteam.com.tn"
+                git config user.name "Jenkins"
+                git remote set-url origin https://\${GIT_USERNAME}:\${GIT_TOKEN}@github.com/firasboudhraa/CloudDevOpsProject.git
+                sed -i 's|image: .*|image: ${IMAGE_NAME}|' ArgoCd/deployment.yml
+                git add ArgoCd/deployment.yml
+                git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
+                git push origin main
+              """
+            }
+          }
+        }
+      }
+
+      stage('Apply ArgoCD Application') {
+        steps {
+          sh '''
+            echo "📦 Applying ArgoCD Application definition..."
+            kubectl apply -f ArgoCd/node-app-application.yml -n argocd || true
+          '''
+        }
+      }
+
+      stage('Login & Sync ArgoCD') {
+        steps {
+          script {
+            def config = [
+              vaultCredentialId: 'vault-jenkins-token',
+              vaultUrl: "${VAULT_ADDR}",
+              engineVersion: 2
+            ]
+            def argocdSecret = [
+              [path: 'secret/ci/argocd', secretValues: [
+                [envVar: 'ARGOCD_PASSWORD', vaultKey: 'admin_password'],
+                [envVar: 'ARGOCD_USERNAME', vaultKey: 'admin_username']
+              ]]
+            ]
+
+            withVault([vaultSecrets: argocdSecret, configuration: config]) {
+              sh '''
+                echo "🔐 Logging into ArgoCD..."
+                ARGOCD_SERVER=localhost:30915
+
+                argocd login $ARGOCD_SERVER \
+                  --username $ARGOCD_USERNAME \
+                  --password $ARGOCD_PASSWORD \
+                  --insecure --grpc-web
+
+                echo "🚀 Triggering ArgoCD sync..."
+                argocd app sync node-app --insecure --grpc-web || echo "ArgoCD sync failed"
+              '''
+            }
+          }
         }
       }
     }
+    
+  post {
+    success {
+      script {
+        def config = [
+          vaultCredentialId: 'vault-jenkins-token',
+          vaultUrl: "${VAULT_ADDR}",
+          engineVersion: 2
+        ]
+        def slackSecret = [
+          [path: 'secret/ci/slack', secretValues: [
+            [envVar: 'SLACK_URL', vaultKey: 'token']
+          ]]
+        ]
 
-    stage('SonarQube Analysis') {
-      steps {
-        dir("${APP_DIR}") {
-          // Laisser sonar-scanner lire sonar-project.properties.
+        withVault([vaultSecrets: slackSecret, configuration: config]) {
           sh '''
-            echo "Running SonarQube scanner..."
-            npx sonar-scanner \
-              -Dsonar.projectKey=express-app \
-              -Dsonar.host.url=http://localhost:9000 \
-              -Dsonar.login=$SONAR_TOKEN
+            curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ Jenkins Pipeline Succeeded: *CloudDevOpsProject*"}' \
+            $SLACK_URL
           '''
         }
       }
     }
-
-    stage('Build Docker Image') {
-      steps {
-        sh "docker build -t ${IMAGE_NAME} ${APP_DIR}"
-      }
-    }
-
-    stage('Trivy Scan') {
-      steps {
-        sh """
-          mkdir -p trivy-reports
-          trivy image --severity HIGH,CRITICAL --no-progress \
-            --format table \
-            --output trivy-reports/express_app_report.txt \
-            ${IMAGE_NAME}
-          cat trivy-reports/express_app_report.txt
-        """
-      }
-    }
-
-    stage('Push to DockerHub') {
-      steps {
-        sh """
-          echo \$DOCKER_PASSWORD | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
-          docker push ${IMAGE_NAME}
-          docker logout
-        """
-      }
-    }
-
-    stage('Update ArgoCD Manifest') {
-      steps {
-        sh """
-          git config user.email "jenkins@theteam.com.tn"
-          git config user.name  "Jenkins"
-          git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/firasboudhraa/CloudDevOpsProject.git
-          sed -i 's|image: .*|image: ${IMAGE_NAME}|' ArgoCd/deployment.yml
-          git add ArgoCd/deployment.yml
-          git commit -m "Update image to ${IMAGE_NAME}" || echo "No changes to commit"
-          git push origin main
-        """
-      }
-    }
-
-    stage('Apply ArgoCD Application') {
-      steps {
-        sh '''
-          echo "Applying ArgoCD Application definition..."
-          kubectl apply -f ArgoCd/node-app-application.yml -n argocd || true
-        '''
-      }
-    }
-
-    stage('Login & Sync ArgoCD') {
-      steps {
-        sh '''
-          echo "Logging into ArgoCD..."
-          ARGOCD_SERVER=localhost:30915
-
-          argocd login $ARGOCD_SERVER \
-            --username $ARGOCD_USERNAME \
-            --password $ARGOCD_PASSWORD \
-            --insecure --grpc-web
-
-          echo "Triggering ArgoCD sync..."
-          argocd app sync node-app --insecure --grpc-web || echo "ArgoCD sync failed"
-        '''
-      }
-    }
-  } // end stages
-
-  post {
-    success {
-      sh '''
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text":"✅ Jenkins Pipeline Succeeded: *CloudDevopsProject*"}' \
-        $SLACK_URL
-      '''
-    }
     failure {
-      sh '''
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text":"❌ Jenkins Pipeline *FAILED*: Please check the logs 📄"}' \
-        $SLACK_URL
-      '''
+      script {
+        def config = [
+          vaultCredentialId: 'vault-jenkins-token',
+          vaultUrl: "${VAULT_ADDR}",
+          engineVersion: 2
+        ]
+        def slackSecret = [
+          [path: 'secret/ci/slack', secretValues: [
+            [envVar: 'SLACK_URL', vaultKey: 'token']
+          ]]
+        ]
+
+        withVault([vaultSecrets: slackSecret, configuration: config]) {
+          sh '''
+            curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ Jenkins Pipeline *FAILED*: Please check the logs 📄"}' \
+            $SLACK_URL
+          '''
+        }
+      }
     }
   }
+
 }
