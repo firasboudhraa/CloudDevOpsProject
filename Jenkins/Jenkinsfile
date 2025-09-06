@@ -86,17 +86,17 @@ pipeline {
             withVault([vaultSecrets: sonarSecret, configuration: config]) {
               echo "✅ SonarQube secrets loaded successfully"
               sh 'echo 🔐 $SONAR_TOKEN'
+              dir("${APP_DIR}") {
+                sh '''
+                  echo "Running SonarQube scanner..."
+                  npx sonar-scanner -X \
+                    -Dsonar.projectKey=express-app \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=${SONAR_TOKEN}
+                '''
             }
-            dir("${APP_DIR}") {
-              sh '''
-                echo "Running SonarQube scanner..."
-                npx sonar-scanner -X \
-                  -Dsonar.projectKey=express-app \
-                  -Dsonar.sources=. \
-                  -Dsonar.host.url=http://localhost:9000 \
-                  -Dsonar.login=${SONAR_TOKEN}
-              '''
-            }
+           }
           }
         }
       }
