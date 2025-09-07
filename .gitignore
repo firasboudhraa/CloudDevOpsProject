@@ -5,6 +5,7 @@
 .terraform/
 Terraform/terraform.tfvars
 App/node_modules/
+App/coverage/
 *.log
 *.pem
 *.key
