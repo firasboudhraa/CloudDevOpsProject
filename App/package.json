@@ -2,9 +2,9 @@
   "name": "node-app",
   "version": "1.0.0",
   "description": "A simple Node.js application",
-  "main": "app.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node src/server.js",
         "test": "cross-env NODE_ENV=test jest --runInBand",
     "test:cov": "cross-env NODE_ENV=test jest --coverage --runInBand"
   },
